@@ -4,7 +4,7 @@
 #include <string.h>
 typedef struct Node{
     int data;
-    Node* next;
+    struct Node* next;
 }Node;
 
 typedef struct Queue{
@@ -23,6 +23,8 @@ typedef struct ThreadIn{
     // add here things
 }ThreadIn;
 
+void dropHead(Queue* queue);
+
 // 
 // server.c: A very, very simple web server
 //
@@ -37,29 +39,28 @@ typedef struct ThreadIn{
 
 
 void* doWork(ThreadIn* arg){
-int connfd;
+    int connfd;
 
-while(1){
+    while(1){
 
-    pthread_mutex_lock(arg->queueLock);
-    while(arg->queue->size == 0){
-        pthread_cond_wait(arg->queueCond, arg->queueLock);
+        pthread_mutex_lock(arg->queueLock);
+        while(arg->queue->size == 0){
+            pthread_cond_wait(arg->queueCond, arg->queueLock);
+        }
+        connfd = arg->queue->head->next->data;
+        dropHead(arg->queue);
+        pthread_mutex_unlock(arg->queueLock);
+
+        requestHandle(connfd);
+        Close(connfd);
+
+        pthread_mutex_lock(arg->queueLock);
+        arg->tasksAmount--;
+        pthread_cond_signal(arg->tasksAmountCond);
+        pthread_mutex_unlock(arg->queueLock);
+
+
     }
-    connfd = arg->queue->head->next->data;
-    dropHead(arg->queue);
-    free(arg->queue->head->next);
-    pthread_mutex_unlock(arg->queueLock);
-
-    requestHandle(connfd);
-    Close(connfd);
-
-    pthread_mutex_lock(arg->queueLock);
-    arg->tasksAmount--;
-    pthread_cond_signal(arg->tasksAmountCond);
-    pthread_mutex_unlock(arg->queueLock);
-
-
-}
 
 
 }
@@ -78,8 +79,9 @@ void getargs(int *port, int argc, char *argv[], int *maxSize, int *threadsNum, c
 }
 
 
-void dropHead(Queue* queue){
+void dropHead(Queue* queue){ //queue should not be empty when calling!!!
     queue->size--;
+    Node* to_free = queue->head->next;
     if(queue->size == 0){
         queue->head->next = NULL;
         queue->tail = queue->head;
@@ -87,7 +89,7 @@ void dropHead(Queue* queue){
     else{
         queue->head->next = queue->head->next->next;
     }
-    free(queue->head->next);
+    free(to_free);
 }
 
 
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
         threadArgs[i]->tasksAmount = &tasksAmount;
         threadArgs[i]->tasksAmountCond = &tasksAmountCond;
         //add things to threadArgs[i]
-        pthread_create(&threads[i], NULL, doWork, threadArgs[i]);
+        pthread_create(threads[i], NULL, doWork, threadArgs[i]);
     }
 
     // 
@@ -160,7 +162,15 @@ int main(int argc, char *argv[])
             pthread_mutex_unlock(&queueLock);
         }
         else if(strcmp(dt, overloadMethod) == 0){
-            Close(connfd);
+            pthread_mutex_lock(&queueLock);
+            if (tasksAmount == requests->maxSize){
+                Close(connfd);
+            }
+            else{
+                addRequest(requests, &tasksAmount, connfd);
+                pthread_cond_broadcast(&queueCond);
+            }
+            pthread_mutex_unlock(&queueLock);
         }
         else if(strcmp(dh, overloadMethod) == 0){
             pthread_mutex_lock(&queueLock);
