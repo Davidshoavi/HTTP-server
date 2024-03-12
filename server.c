@@ -42,6 +42,9 @@ void dropHead(Queue* queue);
 void* doWork(ThreadIn* arg){
     int connfd;
     int id = arg->id;
+    int countReqCount = 0;
+    int staticReqCount = 0;
+    int dynamicReqCount = 0;
     while(1){
 
         pthread_mutex_lock(arg->queueLock);
