@@ -20,6 +20,7 @@ typedef struct ThreadIn{
     pthread_cond_t* queueCond;
     int* tasksAmount;
     pthread_cond_t* tasksAmountCond;
+    int id;
     // add here things
 }ThreadIn;
 
@@ -40,7 +41,7 @@ void dropHead(Queue* queue);
 
 void* doWork(ThreadIn* arg){
     int connfd;
-
+    int id = arg->id;
     while(1){
 
         pthread_mutex_lock(arg->queueLock);
@@ -138,6 +139,7 @@ int main(int argc, char *argv[])
         threadArgs[i]->queueCond = &queueCond;
         threadArgs[i]->tasksAmount = &tasksAmount;
         threadArgs[i]->tasksAmountCond = &tasksAmountCond;
+        threadArgs[i]->id = i;
         //add things to threadArgs[i]
         pthread_create(threads[i], NULL, doWork, threadArgs[i]);
     }
