@@ -152,7 +152,7 @@ void requestServeStatic(int fd, char *filename, int filesize)
 }
 
 // handle a request
-void requestHandle(int fd, int* countReqCount, int* staticReqCount, int* dynamicReqCount)
+void requestHandle(int fd, int* reqCount, int* staticReqCount, int* dynamicReqCount)
 {
 
    int is_static;
@@ -184,6 +184,7 @@ void requestHandle(int fd, int* countReqCount, int* staticReqCount, int* dynamic
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not read this file");
          return;
       }
+      *staticReqCount++;
       requestServeStatic(fd, filename, sbuf.st_size);
    } else {
       if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
@@ -191,7 +192,9 @@ void requestHandle(int fd, int* countReqCount, int* staticReqCount, int* dynamic
          return;
       }
       requestServeDynamic(fd, filename, cgiargs);
+      *dynamicReqCount++;
    }
+   *reqCount++;
 }
 
 

@@ -1,5 +1,5 @@
 #ifndef __REQUEST_H__
 
-void requestHandle(int fd, int* countReqCount, int* staticReqCount, int* dynamicReqCount);
+void requestHandle(int fd, int* reqCount, int* staticReqCount, int* dynamicReqCount);
 
 #endif

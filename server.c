@@ -42,7 +42,7 @@ void dropHead(Queue* queue);
 void* doWork(ThreadIn* arg){
     int connfd;
     int id = arg->id;
-    int countReqCount = 0;
+    int reqCount = 0;
     int staticReqCount = 0;
     int dynamicReqCount = 0;
     while(1){
@@ -55,15 +55,13 @@ void* doWork(ThreadIn* arg){
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
 
-        requestHandle(connfd, &countReqCount, &staticReqCount, &dynamicReqCount);
+        requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount);
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
         arg->tasksAmount--;
         pthread_cond_signal(arg->tasksAmountCond);
         pthread_mutex_unlock(arg->queueLock);
-
-
     }
 
 
