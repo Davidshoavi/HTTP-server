@@ -55,7 +55,7 @@ void* doWork(ThreadIn* arg){
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
 
-        requestHandle(connfd);
+        requestHandle(connfd, &countReqCount, &staticReqCount, &dynamicReqCount);
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
