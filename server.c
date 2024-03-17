@@ -1,9 +1,11 @@
 #include "segel.h"
 #include "request.h"
 #include "pthread.h"
+#include <time.h>
 #include <string.h>
 typedef struct Node{
     int data;
+    struct timeval arrival;
     struct Node* next;
 }Node;
 
@@ -45,6 +47,8 @@ void* doWork(ThreadIn* arg){
     int reqCount = 0;
     int staticReqCount = 0;
     int dynamicReqCount = 0;
+    struct timeval arrivalTime;
+    struct timeval dispatchTime;
     while(1){
 
         pthread_mutex_lock(arg->queueLock);
@@ -52,10 +56,13 @@ void* doWork(ThreadIn* arg){
             pthread_cond_wait(arg->queueCond, arg->queueLock);
         }
         connfd = arg->queue->head->next->data;
+        arrivalTime = arg->queue->head->arrival;
+        gettimeofday(&dispatchTime, NULL);
+        dispatchTime.tv_sec = dispatchTime.tv_sec - arg->queue->head->arrival.tv_sec;
+        dispatchTime.tv_usec = dispatchTime.tv_usec - arg->queue->head->arrival.tv_usec;
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
-
-        requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id);
+        requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, dispatchTime);
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
@@ -99,6 +106,7 @@ void addRequest(Queue* requests, int* tasksAmount, int connfd){
     requests->tail->next = (Node*)malloc(sizeof(Node));
     requests->tail->next->data = connfd;
     requests->tail->next->next = NULL;
+    gettimeofday(&requests->tail->arrival, NULL);
     requests->tail = requests->tail->next;
     requests->size++;
     tasksAmount++;
