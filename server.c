@@ -66,7 +66,7 @@ void* doWork(ThreadIn* arg){
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
-        *arg->tasksAmount--;
+        (*arg->tasksAmount)--;
         pthread_cond_signal(arg->tasksAmountCond);
         pthread_mutex_unlock(arg->queueLock);
     }
@@ -109,7 +109,7 @@ void addRequest(Queue* requests, int* tasksAmount, int connfd){
     gettimeofday(&requests->tail->arrival, NULL);
     requests->tail = requests->tail->next;
     requests->size++;
-    *tasksAmount++;
+    (*tasksAmount)++;
 }
 
 int main(int argc, char *argv[])
