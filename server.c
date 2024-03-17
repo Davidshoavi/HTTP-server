@@ -66,7 +66,7 @@ void* doWork(ThreadIn* arg){
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
-        arg->tasksAmount--;
+        *arg->tasksAmount--;
         pthread_cond_signal(arg->tasksAmountCond);
         pthread_mutex_unlock(arg->queueLock);
     }
@@ -109,7 +109,7 @@ void addRequest(Queue* requests, int* tasksAmount, int connfd){
     gettimeofday(&requests->tail->arrival, NULL);
     requests->tail = requests->tail->next;
     requests->size++;
-    tasksAmount++;
+    *tasksAmount++;
 }
 
 int main(int argc, char *argv[])
@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
     
     getargs(&port, argc, argv, &requests->maxSize, &threadsNum, &overloadMethod);
 
-    pthread_t* threads [threadsNum];
-    ThreadIn* threadArgs [threadsNum];
+    pthread_t** threads = malloc(threadsNum * sizeof(pthread_t*));
+    ThreadIn** threadArgs = malloc(threadsNum * sizeof(ThreadIn*));
 
     pthread_mutex_t queueLock;
     pthread_mutex_init(&queueLock, NULL);
@@ -149,8 +149,11 @@ int main(int argc, char *argv[])
         threadArgs[i]->tasksAmount = &tasksAmount;
         threadArgs[i]->tasksAmountCond = &tasksAmountCond;
         threadArgs[i]->id = i;
+        threads[i] = malloc(sizeof(pthread_t));
         //add things to threadArgs[i]
-        pthread_create(threads[i], NULL, doWork, threadArgs[i]);
+        pthread_create(threads[i], NULL, doWork, (void*)threadArgs[i]);
+        
+
     }
 
     // 

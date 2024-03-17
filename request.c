@@ -160,7 +160,7 @@ void requestServeStatic(int fd, char *filename, int filesize, int reqCount, int 
    sprintf(buf, "%sStat-Thread-Id:: %d\r\n", buf, threadId); //David added
    sprintf(buf, "%sStat-Thread-Count:: %d\r\n", buf, reqCount);
    sprintf(buf, "%sStat-Thread-Static:: %d\r\n", buf, staticReqCount);
-   sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n", buf, dynamicReqCount);
+   sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, dynamicReqCount);
 
    Rio_writen(fd, buf, strlen(buf));
 
@@ -203,16 +203,16 @@ void requestHandle(int fd, int* reqCount, int* staticReqCount, int* dynamicReqCo
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not read this file", *reqCount, *staticReqCount, *dynamicReqCount, threadId, arrival, dispatch);
          return;
       }
-      *reqCount++;
-      *staticReqCount++;
+      (*reqCount)++;
+      (*staticReqCount)++;
       requestServeStatic(fd, filename, sbuf.st_size, *reqCount, *staticReqCount, *dynamicReqCount, threadId, arrival, dispatch);
    } else {
       if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
          requestError(fd, filename, "403", "Forbidden", "OS-HW3 Server could not run this CGI program", *reqCount, *staticReqCount, *dynamicReqCount, threadId, arrival, dispatch);
          return;
       }
-      *reqCount++;
-      *dynamicReqCount++;
+      (*reqCount)++;
+      (*dynamicReqCount)++;
       requestServeDynamic(fd, filename, cgiargs, *reqCount, *staticReqCount, *dynamicReqCount, threadId, arrival, dispatch);
    }
 }
