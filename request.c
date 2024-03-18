@@ -171,9 +171,10 @@ void requestServeStatic(int fd, char *filename, int filesize, int reqCount, int 
 }
 
 // handle a request
-void requestHandle(int fd, int* reqCount, int* staticReqCount, int* dynamicReqCount, int threadId, struct timeval arrival, struct timeval dispatch)
+void requestHandle(int fd, int* reqCount, int* staticReqCount, int* dynamicReqCount, int threadId, struct timeval arrival, struct timeval threadCatch)
 {
-
+   struct timeval dispatch;
+   timersub(&threadCatch, &arrival, &dispatch);
    int is_static;
    struct stat sbuf;
    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];

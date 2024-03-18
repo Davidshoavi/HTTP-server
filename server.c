@@ -48,20 +48,19 @@ void* doWork(ThreadIn* arg){
     int staticReqCount = 0;
     int dynamicReqCount = 0;
     struct timeval arrivalTime;
-    struct timeval dispatchTime;
+    struct timeval threadCatchTime;
     while(1){
 
         pthread_mutex_lock(arg->queueLock);
         while(arg->queue->size == 0){
             pthread_cond_wait(arg->queueCond, arg->queueLock);
         }
-        gettimeofday(&dispatchTime, NULL);
-        arrivalTime = arg->queue->head->next->arrival;
-        timersub(&(dispatchTime), &(arrivalTime), &(dispatchTime));
         connfd = arg->queue->head->next->data;
         dropHead(arg->queue);
+        arrivalTime = arg->queue->head->next->arrival;
         pthread_mutex_unlock(arg->queueLock);
-        requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, dispatchTime);
+        gettimeofday(&threadCatchTime, NULL);
+        requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, threadCatchTime);
         Close(connfd);
 
         pthread_mutex_lock(arg->queueLock);
