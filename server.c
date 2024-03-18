@@ -58,8 +58,7 @@ void* doWork(ThreadIn* arg){
         connfd = arg->queue->head->next->data;
         arrivalTime = arg->queue->head->arrival;
         gettimeofday(&dispatchTime, NULL);
-        dispatchTime.tv_sec = dispatchTime.tv_sec - arg->queue->head->arrival.tv_sec;
-        dispatchTime.tv_usec = dispatchTime.tv_usec - arg->queue->head->arrival.tv_usec;
+        timersub(&(dispatchTime), &(arg->queue->head->arrival), &(dispatchTime));
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
         requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, dispatchTime);
@@ -188,13 +187,18 @@ int main(int argc, char *argv[])
         }
         else if(strcmp(dh, overloadMethod) == 0){
             pthread_mutex_lock(&queueLock);
-            if (tasksAmount == requests->maxSize){
-                Close(requests->head->next->data); //closes the connection with the first node
-                dropHead(requests);
-                tasksAmount--;
+            if (requests->size==0 && tasksAmount == requests->maxSize){
+                close(connfd);
             }
-            addRequest(requests, &tasksAmount, connfd);
-            pthread_cond_broadcast(&queueCond);
+            else{
+                if (tasksAmount == requests->maxSize){
+                    Close(requests->head->next->data); //closes the connection with the first node
+                    dropHead(requests);
+                    tasksAmount--;
+                }
+                addRequest(requests, &tasksAmount, connfd);
+                pthread_cond_broadcast(&queueCond);
+            }
             pthread_mutex_unlock(&queueLock);
         }
         else{}
