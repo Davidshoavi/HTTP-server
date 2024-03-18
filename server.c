@@ -101,9 +101,9 @@ void dropHead(Queue* queue){ //queue should not be empty when calling!!!
 }
 
 
-void addRequest(Queue* requests, int* tasksAmount, int connfd){
+void addRequest(Queue* requests, int* tasksAmount, int connfd, struct timeval arrival){
     requests->tail->next = (Node*)malloc(sizeof(Node));
-    gettimeofday(&requests->tail->arrival, NULL);
+    requests->tail->arrival = arrival;
     requests->tail->next->data = connfd;
     requests->tail->next->next = NULL;
     requests->tail = requests->tail->next;
@@ -163,6 +163,8 @@ int main(int argc, char *argv[])
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+        struct timeval temp;
+        gettimeofday(&temp, NULL);
 
         if(strcmp(block, overloadMethod) == 0){ // Block method
 
@@ -170,7 +172,7 @@ int main(int argc, char *argv[])
             while(tasksAmount == requests->maxSize){
                 pthread_cond_wait(&tasksAmountCond, &queueLock);
             }
-            addRequest(requests, &tasksAmount, connfd);
+            addRequest(requests, &tasksAmount, connfd, temp);
             pthread_cond_broadcast(&queueCond);
             pthread_mutex_unlock(&queueLock);
         }
@@ -180,7 +182,7 @@ int main(int argc, char *argv[])
                 Close(connfd);
             }
             else{
-                addRequest(requests, &tasksAmount, connfd);
+                addRequest(requests, &tasksAmount, connfd, temp);
                 pthread_cond_broadcast(&queueCond);
             }
             pthread_mutex_unlock(&queueLock);
@@ -196,7 +198,7 @@ int main(int argc, char *argv[])
                     dropHead(requests);
                     tasksAmount--;
                 }
-                addRequest(requests, &tasksAmount, connfd);
+                addRequest(requests, &tasksAmount, connfd, temp);
                 pthread_cond_broadcast(&queueCond);
             }
             pthread_mutex_unlock(&queueLock);
