@@ -57,7 +57,8 @@ void* doWork(ThreadIn* arg){
         }
         connfd = arg->queue->head->next->data;
         dropHead(arg->queue);
-        arrivalTime = arg->queue->head->next->arrival;
+        arrivalTime.tv_usec = arg->queue->head->next->arrival.tv_usec;
+        arrivalTime.tv_sec = arg->queue->head->next->arrival.tv_sec;
         pthread_mutex_unlock(arg->queueLock);
         gettimeofday(&threadCatchTime, NULL);
         requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, threadCatchTime);
@@ -102,7 +103,8 @@ void dropHead(Queue* queue){ //queue should not be empty when calling!!!
 
 void addRequest(Queue* requests, int* tasksAmount, int connfd, struct timeval arrival){
     requests->tail->next = (Node*)malloc(sizeof(Node));
-    requests->tail->arrival = arrival;
+    requests->tail->next->arrival.tv_sec = arrival.tv_sec;
+    requests->tail->next->arrival.tv_usec = arrival.tv_usec;
     requests->tail->next->data = connfd;
     requests->tail->next->next = NULL;
     requests->tail = requests->tail->next;
@@ -159,10 +161,10 @@ int main(int argc, char *argv[])
     //
 
     listenfd = Open_listenfd(port);
+    struct timeval temp;
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-        struct timeval temp;
         gettimeofday(&temp, NULL);
 
         if(strcmp(block, overloadMethod) == 0){ // Block method
