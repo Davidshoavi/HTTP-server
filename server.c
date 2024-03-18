@@ -56,9 +56,9 @@ void* doWork(ThreadIn* arg){
             pthread_cond_wait(arg->queueCond, arg->queueLock);
         }
         gettimeofday(&dispatchTime, NULL);
-        timersub(&(dispatchTime), &(arg->queue->head->next->arrival), &(dispatchTime));
-        connfd = arg->queue->head->next->data;
         arrivalTime = arg->queue->head->next->arrival;
+        timersub(&(dispatchTime), &(arrivalTime), &(dispatchTime));
+        connfd = arg->queue->head->next->data;
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
         requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, dispatchTime);
