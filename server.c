@@ -55,10 +55,10 @@ void* doWork(ThreadIn* arg){
         while(arg->queue->size == 0){
             pthread_cond_wait(arg->queueCond, arg->queueLock);
         }
-        connfd = arg->queue->head->next->data;
-        arrivalTime = arg->queue->head->arrival;
         gettimeofday(&dispatchTime, NULL);
-        timersub(&(dispatchTime), &(arg->queue->head->arrival), &(dispatchTime));
+        timersub(&(dispatchTime), &(arg->queue->head->next->arrival), &(dispatchTime));
+        connfd = arg->queue->head->next->data;
+        arrivalTime = arg->queue->head->next->arrival;
         dropHead(arg->queue);
         pthread_mutex_unlock(arg->queueLock);
         requestHandle(connfd, &reqCount, &staticReqCount, &dynamicReqCount, id, arrivalTime, dispatchTime);
@@ -103,9 +103,9 @@ void dropHead(Queue* queue){ //queue should not be empty when calling!!!
 
 void addRequest(Queue* requests, int* tasksAmount, int connfd){
     requests->tail->next = (Node*)malloc(sizeof(Node));
+    gettimeofday(&requests->tail->arrival, NULL);
     requests->tail->next->data = connfd;
     requests->tail->next->next = NULL;
-    gettimeofday(&requests->tail->arrival, NULL);
     requests->tail = requests->tail->next;
     requests->size++;
     (*tasksAmount)++;
